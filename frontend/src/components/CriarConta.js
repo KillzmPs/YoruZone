@@ -1,6 +1,6 @@
 const InsertConta = async (nick, email) => {
     try {
-        const res = await fetch('http://localhost:3000/api/criar-conta', {
+        const res = await fetch('https://backend-yoru-zone.vercel.app/api/criar-conta', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({nick, email}),
@@ -10,7 +10,7 @@ const InsertConta = async (nick, email) => {
             throw new Error("Erro ao criar conta");
         }
 
-        const data = await res.json();
+        const dataq = await res.json();
         return data;
     } catch (error) {
         return {erro: error};

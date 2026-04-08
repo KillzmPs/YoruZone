@@ -1,6 +1,6 @@
 const Historico = async (Id) => {
     try {
-        const res = await fetch('http://localhost:3000/api/historico', {
+        const res = await fetch('https://backend-yoru-zone.vercel.app/api/historico', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({Id}),

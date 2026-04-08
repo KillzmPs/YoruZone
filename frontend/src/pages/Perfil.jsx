@@ -5,7 +5,7 @@ import { useUser } from "../context/UserContext.jsx";
 import { useNavigate } from "react-router-dom";
 import Historico from "../components/Historico.js";
 
-const socket = io("http://localhost:3000");
+const socket = io("socketyoru-production.up.railway.app");
 
 function Perfil() {
     const [code, setCode] = useState('');
