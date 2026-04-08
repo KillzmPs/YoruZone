@@ -27,8 +27,9 @@ function Login() {
 
         try {
             const result = await LogIn(email, password);
+            console.log(result);
 
-            if (result["id"] != null) {
+            if (result["nick"] != null) {
                 log(result);
                 notifySuccess("Sucesso!");
                 navigate("/perfil");
@@ -62,7 +63,7 @@ function Login() {
 
                     <button  type='submit' className="w-full py-6 bg-blue-400 text-white border-0 rounded-xl cursor-pointer text-2xl font-bold mt-5 shadow-lg transition-all duration-300 hover:brightness-110 hover:-translate-y-1 hover:shadow-xl"
                              onClick={Log}>Login</button>
-                    <div className=" text-gray-400">
+                    <div className=" text-gray-400 hover:underline" onClick={() => navigate('/criar_conta')}>
                         Criar Conta
                     </div>
                 </div>
