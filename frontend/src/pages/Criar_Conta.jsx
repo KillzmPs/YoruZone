@@ -19,7 +19,7 @@ function CriarConta() {
 
         try {
 
-            const result = await criarConta(nick, email);
+            const result = await InsertConta(nick, email);
 
             notifySuccess(result.message || "Conta criada com sucesso!");
             navigate("/");
