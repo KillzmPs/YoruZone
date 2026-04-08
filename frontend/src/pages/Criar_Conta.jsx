@@ -2,7 +2,7 @@ import logo from '../assets/Valorant.png';
 import { useState } from "react";
 import { useNotification } from "../context/NotificationContext.jsx";
 import { useNavigate } from "react-router-dom";
-import criarConta from "../components/criarConta.js";
+import InsertConta from "../components/CriarConta.js";
 
 function CriarConta() {
     const [nick, setNick] = useState('');
