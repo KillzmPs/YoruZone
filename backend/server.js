@@ -4,8 +4,6 @@ const dotenv = require("dotenv");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const http = require("http");
-const { Server } = require("socket.io");
 
 dotenv.config();
 const connectDB = require("./db");
@@ -14,85 +12,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
-
-const lobbies = {};
-
-io.on("connection", (socket) => {
-  console.log("User conectado:", socket.id);
-
-  socket.on("createLobby", ({ nick }) => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-    lobbies[code] = {
-      host: socket.id,
-      players: [{ nick, id: socket.id }],
-    };
-
-    socket.join(code);
-    socket.emit("lobbyCreated", { code });
-  });
-
-  socket.on("joinLobby", ({ code, nick }) => {
-    const lobby = lobbies[code];
-
-    if (!lobby) {
-      return socket.emit("errorLobby", "Lobby não existe");
-    }
-
-    if (lobby.players.length >= 2) {
-      return socket.emit("errorLobby", "Lobby cheio");
-    }
-
-    lobby.players.push({ nick, id: socket.id });
-    socket.join(code);
-
-    io.to(code).emit("playerJoined", lobby.players);
-  });
-
-  socket.on("startGame", ({ code }) => {
-    const lobby = lobbies[code];
-
-    if (!lobby) return;
-
-    if (lobby.host !== socket.id) {
-      return socket.emit("errorLobby", "Só o host pode iniciar o jogo");
-    }
-
-    if (lobby.players.length < 2) {
-      return socket.emit("errorLobby", "Precisas de 2 jogadores");
-    }
-
-    io.to(code).emit("gameStarting", {
-      players: lobby.players,
-    });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User desconectado:", socket.id);
-
-    for (const code in lobbies) {
-      const lobby = lobbies[code];
-      const index = lobby.players.findIndex((p) => p.id === socket.id);
-
-      if (index !== -1) {
-        lobby.players.splice(index, 1);
-
-        if (lobby.players.length === 0) {
-          delete lobbies[code];
-        } else {
-          io.to(code).emit("playerJoined", lobby.players);
-        }
-      }
-    }
-  });
-});
+// ─── NOTA: Socket.io NÃO funciona no Vercel (serverless).
+// Mantém o servidor Socket.io no Railway ou Render separadamente. ───────────
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -102,8 +23,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const PORT = process.env.PORT || 3000;
-
+// ── LOGIN ────────────────────────────────────────────────────────────────────
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -135,6 +55,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// ── CRIAR CONTA ──────────────────────────────────────────────────────────────
 app.post("/api/criar-conta", async (req, res) => {
   const { nick, email } = req.body;
 
@@ -177,6 +98,7 @@ app.post("/api/criar-conta", async (req, res) => {
   }
 });
 
+// ── HISTÓRICO ────────────────────────────────────────────────────────────────
 app.post("/api/historico", async (req, res) => {
   const { Id } = req.body;
 
@@ -207,18 +129,5 @@ app.post("/api/historico", async (req, res) => {
   }
 });
 
-async function startServer() {
-  try {
-    await connectDB();
-
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Servidor na porta ${PORT}`);
-    });
-
-  } catch (err) {
-    console.error("Erro ao iniciar:", err);
-    process.exit(1);
-  }
-}
-
-startServer();
+// ── EXPORT para Vercel ───────────────────────────────────────────────────────
+module.exports = app;
