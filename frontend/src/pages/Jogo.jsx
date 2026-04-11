@@ -3,12 +3,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 import * as THREE from "three";
+import confetti from "canvas-confetti";
 
-const PLAYER_SPEED  = 0.13;
+const PLAYER_SPEED  = 0.15;
 const PLAYER_HEIGHT = 1.7;
-const GRAVITY       = -0.018;
-const JUMP_FORCE    = 0.32;
+const GRAVITY       = -0.015;
+const JUMP_FORCE    = 0.35;
 const MAP_SIZE      = 200;
+const BOX_W         = 8;
+const BOX_H         = 5;
+const BOX_D         = 8;
 
 function Jogo() {
   const mountRef  = useRef(null);
@@ -24,37 +28,26 @@ function Jogo() {
   const isHost    = players[0] === myNick;
   const lobbyCode = location.state?.lobbyCode || location.state?.code || "";
 
-  const [hp, setHp]           = useState(100);
-  const [enemyHp, setEnemyHp] = useState(100);
-  const [ammo, setAmmo]       = useState(30);
-  const [hitFlash, setHitFlash]         = useState(false);
+  const [hp, setHp]                     = useState(100);
+  const [enemyHp, setEnemyHp]           = useState(100);
+  const [ammo, setAmmo]                 = useState(30);
   const [crosshairRed, setCrosshairRed] = useState(false);
-  const [phase, setPhase]     = useState("game");
-  const notifRef = useRef(null);
-
-  const notify = (msg, dur = 2000) => {
-    if (notifRef.current) notifRef.current.textContent = msg;
-    setTimeout(() => { if (notifRef.current) notifRef.current.textContent = ""; }, dur);
-  };
+  const [phase, setPhase]               = useState("game");
 
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("enemyMove", ({ x, y, z, yaw, pitch, moving }) => {
+    socket.on("enemyMove", ({ x, y, z, yaw }) => {
       const g = gameRef.current;
       if (!g.enemy) return;
       g.enemy.position.set(x, y, z);
       g.enemy.rotation.y = yaw + Math.PI;
-      if (g.enemyHead) g.enemyHead.rotation.x = pitch * 0.6;
-      g.enemyMoving = moving;
     });
 
     socket.on("youWereHit", ({ damage }) => {
       const g = gameRef.current;
       g.hp = Math.max(0, (g.hp ?? 100) - damage);
       setHp(g.hp);
-      setHitFlash(true);
-      setTimeout(() => setHitFlash(false), 180);
       if (g.hp <= 0) setPhase("lose");
     });
 
@@ -79,41 +72,30 @@ function Jogo() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1a2e);
     scene.fog = new THREE.FogExp2(0x1a1a2e, 0.007);
-    g.scene = scene;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(el.clientWidth, el.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     el.appendChild(renderer.domElement);
-    g.renderer = renderer;
-
     renderer.domElement.requestPointerLock();
 
     const camera = new THREE.PerspectiveCamera(80, el.clientWidth / el.clientHeight, 0.05, 600);
     const spawn = isHost ? { x: -80, z: -80 } : { x: 80, z: 80 };
-    g.pos   = { x: spawn.x, y: PLAYER_HEIGHT, z: spawn.z };
-    g.vel   = { y: 0 };
-    g.yaw   = 0;
-    g.pitch = 0;
+    g.pos      = { x: spawn.x, y: PLAYER_HEIGHT, z: spawn.z };
+    g.vel      = { y: 0 };
+    g.yaw      = 0;
+    g.pitch    = 0;
     g.onGround = true;
-    g.ammo  = 30;
-    g.hp    = 100;
+    g.ammo     = 30;
+    g.hp       = 100;
     g.lastShot = 0;
     camera.position.set(g.pos.x, g.pos.y, g.pos.z);
-    g.camera = camera;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
     const sun = new THREE.DirectionalLight(0xffeedd, 1.1);
-    sun.position.set(30, 60, 30);
+    sun.position.set(40, 80, 40);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.near   = 1;
-    sun.shadow.camera.far    = 200;
-    sun.shadow.camera.left   = -60;
-    sun.shadow.camera.right  =  60;
-    sun.shadow.camera.top    =  60;
-    sun.shadow.camera.bottom = -60;
     scene.add(sun);
 
     g.collidables = buildArena(scene);
@@ -122,11 +104,10 @@ function Jogo() {
     const enemy = new THREE.Group();
 
     const torso = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, 0.8, 0.35),
+        new THREE.BoxGeometry(0.6, 0.9, 0.35),
         new THREE.MeshLambertMaterial({ color: enemyColor })
     );
-    torso.position.y = 1.1;
-    torso.castShadow = true;
+    torso.position.y = 1.05;
     enemy.add(torso);
 
     const head = new THREE.Mesh(
@@ -134,41 +115,21 @@ function Jogo() {
         new THREE.MeshLambertMaterial({ color: 0xffccaa })
     );
     head.position.y = 1.72;
-    head.castShadow = true;
     enemy.add(head);
 
-    const armGeo = new THREE.BoxGeometry(0.16, 0.55, 0.16);
-    const armMat = new THREE.MeshLambertMaterial({ color: enemyColor });
-    const lArm = new THREE.Group(), rArm = new THREE.Group();
-    [lArm, rArm].forEach((a, i) => {
-      const m = new THREE.Mesh(armGeo, armMat);
-      m.position.y = -0.27;
-      a.add(m);
-      a.position.set(i === 0 ? -0.4 : 0.4, 1.45, 0);
-      enemy.add(a);
-    });
-
-    const legGeo = new THREE.BoxGeometry(0.2, 0.65, 0.2);
+    const legGeo = new THREE.BoxGeometry(0.22, 0.7, 0.22);
     const legMat = new THREE.MeshLambertMaterial({ color: 0x222244 });
-    const lLeg = new THREE.Group(), rLeg = new THREE.Group();
-    [lLeg, rLeg].forEach((l, i) => {
-      const m = new THREE.Mesh(legGeo, legMat);
-      m.position.y = -0.32;
-      l.add(m);
-      l.position.set(i === 0 ? -0.17 : 0.17, 0.68, 0);
-      enemy.add(l);
+    [-0.17, 0.17].forEach(ox => {
+      const leg = new THREE.Mesh(legGeo, legMat);
+      leg.position.set(ox, 0.35, 0);
+      enemy.add(leg);
     });
 
     const enemySpawn = isHost ? { x: 80, z: 80 } : { x: -80, z: -80 };
     enemy.position.set(enemySpawn.x, 0, enemySpawn.z);
     scene.add(enemy);
-
     g.enemy     = enemy;
     g.enemyHead = head;
-    g.lArm = lArm; g.rArm = rArm;
-    g.lLeg = lLeg; g.rLeg = rLeg;
-    g.enemyMoving = false;
-    g.animT = 0;
 
     const nc = document.createElement("canvas");
     nc.width = 256; nc.height = 56;
@@ -183,48 +144,41 @@ function Jogo() {
         new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(nc), transparent: true })
     );
     sprite.scale.set(1.8, 0.45, 1);
-    sprite.position.y = 2.4;
+    sprite.position.y = 2.5;
     enemy.add(sprite);
 
     const keys = {};
-    const onKD = e => { keys[e.code] = true; };
-    const onKU = e => { keys[e.code] = false; };
-    window.addEventListener("keydown", onKD);
-    window.addEventListener("keyup", onKU);
+    window.addEventListener("keydown", e => { keys[e.code] = true; });
+    window.addEventListener("keyup",   e => { keys[e.code] = false; });
 
-    const onCanvasClick = () => {
-      if (document.pointerLockElement !== renderer.domElement) {
+    renderer.domElement.addEventListener("click", () => {
+      if (document.pointerLockElement !== renderer.domElement)
         renderer.domElement.requestPointerLock();
-      }
-    };
-    renderer.domElement.addEventListener("click", onCanvasClick);
+    });
 
-    const onMM = e => {
+    window.addEventListener("mousemove", e => {
       if (document.pointerLockElement !== renderer.domElement) return;
       g.yaw   -= e.movementX * 0.002;
       g.pitch -= e.movementY * 0.002;
       g.pitch  = Math.max(-1.3, Math.min(1.3, g.pitch));
-    };
-    window.addEventListener("mousemove", onMM);
+    });
 
-    const onMD = e => {
+    window.addEventListener("mousedown", e => {
       if (e.button !== 0) return;
       if (document.pointerLockElement !== renderer.domElement) return;
       shoot();
-    };
-    window.addEventListener("mousedown", onMD);
+    });
 
-    const onResize = () => {
+    window.addEventListener("resize", () => {
       camera.aspect = el.clientWidth / el.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(el.clientWidth, el.clientHeight);
-    };
-    window.addEventListener("resize", onResize);
+    });
 
     const shoot = () => {
       const now = Date.now();
       if (now - g.lastShot < 300) return;
-      if (g.ammo <= 0) { notify("Sem munição!"); return; }
+      if (g.ammo <= 0)  return;
       g.lastShot = now;
       g.ammo--;
       setAmmo(g.ammo);
@@ -233,26 +187,50 @@ function Jogo() {
       ray.setFromCamera(new THREE.Vector2(0, 0), camera);
       const hits = ray.intersectObject(g.enemy, true);
 
-      if (hits.length > 0 && hits[0].distance < 80) {
+      if (hits.length > 0 && hits[0].distance < 150) {
         setCrosshairRed(true);
         setTimeout(() => setCrosshairRed(false), 120);
-        socket?.emit("playerHit", {
-          code: lobbyCode,
-          damage: 25,
-          shooter: myNick,
-        });
+        socket?.emit("playerHit", { code: lobbyCode, damage: 25, shooter: myNick });
       }
 
       const dir = new THREE.Vector3();
       camera.getWorldDirection(dir);
-      const end = hits[0]?.point || camera.position.clone().addScaledVector(dir, 80);
-      const geo = new THREE.BufferGeometry().setFromPoints([camera.position.clone(), end]);
+      const end = hits[0]?.point || camera.position.clone().addScaledVector(dir, 150);
       const line = new THREE.Line(
-          geo,
+          new THREE.BufferGeometry().setFromPoints([camera.position.clone(), end]),
           new THREE.LineBasicMaterial({ color: 0xffff44, transparent: true, opacity: 0.75 })
       );
       scene.add(line);
       setTimeout(() => scene.remove(line), 60);
+    };
+
+    const resolveCollision = (px, pz, prevX, prevZ) => {
+      const PR = 0.4;
+      const playerBottom = g.pos.y - PLAYER_HEIGHT;
+      const playerTop    = g.pos.y + PLAYER_HEIGHT * 0.5;
+
+      for (const b of g.collidables) {
+        if (playerTop < b.minY || playerBottom > b.maxY) continue;
+
+        const inside =
+            px + PR > b.minX && px - PR < b.maxX &&
+            pz + PR > b.minZ && pz - PR < b.maxZ;
+
+        if (!inside) continue;
+
+        const solveX =
+            !(prevX + PR > b.minX && prevX - PR < b.maxX &&
+                pz + PR > b.minZ &&   pz - PR < b.maxZ);
+
+        const solveZ =
+            !(px + PR > b.minX && px - PR < b.maxX &&
+                prevZ + PR > b.minZ && prevZ - PR < b.maxZ);
+
+        if (solveX)       { px = prevX; }
+        else if (solveZ)  { pz = prevZ; }
+        else              { px = prevX; pz = prevZ; }
+      }
+      return { px, pz };
     };
 
     let animId;
@@ -260,64 +238,29 @@ function Jogo() {
       animId = requestAnimationFrame(loop);
 
       const fwd   = new THREE.Vector3(-Math.sin(g.yaw), 0, -Math.cos(g.yaw));
-      const right = new THREE.Vector3(Math.cos(g.yaw), 0, -Math.sin(g.yaw));
+      const right = new THREE.Vector3( Math.cos(g.yaw), 0, -Math.sin(g.yaw));
       let moving = false;
 
-      const prevX = g.pos.x;
-      const prevZ = g.pos.z;
+      const prevX = g.pos.x, prevZ = g.pos.z;
+      let nx = g.pos.x, nz = g.pos.z;
 
-      if (keys["KeyW"] || keys["ArrowUp"])    { g.pos.x += fwd.x * PLAYER_SPEED;   g.pos.z += fwd.z * PLAYER_SPEED;   moving = true; }
-      if (keys["KeyS"] || keys["ArrowDown"])  { g.pos.x -= fwd.x * PLAYER_SPEED;   g.pos.z -= fwd.z * PLAYER_SPEED;   moving = true; }
-      if (keys["KeyA"] || keys["ArrowLeft"])  { g.pos.x -= right.x * PLAYER_SPEED; g.pos.z -= right.z * PLAYER_SPEED; moving = true; }
-      if (keys["KeyD"] || keys["ArrowRight"]) { g.pos.x += right.x * PLAYER_SPEED; g.pos.z += right.z * PLAYER_SPEED; moving = true; }
+      if (keys["KeyW"] || keys["ArrowUp"])    { nx += fwd.x * PLAYER_SPEED;   nz += fwd.z * PLAYER_SPEED;   moving = true; }
+      if (keys["KeyS"] || keys["ArrowDown"])  { nx -= fwd.x * PLAYER_SPEED;   nz -= fwd.z * PLAYER_SPEED;   moving = true; }
+      if (keys["KeyA"] || keys["ArrowLeft"])  { nx -= right.x * PLAYER_SPEED; nz -= right.z * PLAYER_SPEED; moving = true; }
+      if (keys["KeyD"] || keys["ArrowRight"]) { nx += right.x * PLAYER_SPEED; nz += right.z * PLAYER_SPEED; moving = true; }
 
-      if (keys["Space"] && g.onGround) {
-        g.vel.y = JUMP_FORCE;
-        g.onGround = false;
-      }
-
+      if (keys["Space"] && g.onGround) { g.vel.y = JUMP_FORCE; g.onGround = false; }
       g.vel.y += GRAVITY;
       g.pos.y += g.vel.y;
-      if (g.pos.y <= PLAYER_HEIGHT) {
-        g.pos.y = PLAYER_HEIGHT;
-        g.vel.y = 0;
-        g.onGround = true;
-      }
+      if (g.pos.y <= PLAYER_HEIGHT) { g.pos.y = PLAYER_HEIGHT; g.vel.y = 0; g.onGround = true; }
 
-      const PR = 0.4;
-      const playerBottom = g.pos.y - PLAYER_HEIGHT;
-      const playerTop    = g.pos.y + PLAYER_HEIGHT * 0.4;
+      const { px, pz } = resolveCollision(nx, nz, prevX, prevZ);
+      g.pos.x = px;
+      g.pos.z = pz;
 
-      for (const b of (g.collidables || [])) {
-        if (playerTop < b.minY || playerBottom > b.maxY) continue;
-
-        const overlapNow =
-            g.pos.x + PR > b.minX && g.pos.x - PR < b.maxX &&
-            g.pos.z + PR > b.minZ && g.pos.z - PR < b.maxZ;
-
-        if (!overlapNow) continue;
-
-        const okRevertX =
-            !(prevX + PR > b.minX && prevX - PR < b.maxX &&
-                g.pos.z + PR > b.minZ && g.pos.z - PR < b.maxZ);
-
-        const okRevertZ =
-            !(g.pos.x + PR > b.minX && g.pos.x - PR < b.maxX &&
-                prevZ + PR > b.minZ && prevZ - PR < b.maxZ);
-
-        if (okRevertX) {
-          g.pos.x = prevX;
-        } else if (okRevertZ) {
-          g.pos.z = prevZ;
-        } else {
-          g.pos.x = prevX;
-          g.pos.z = prevZ;
-        }
-      }
-
-      const h = MAP_SIZE / 2 - 1;
-      g.pos.x = Math.max(-h, Math.min(h, g.pos.x));
-      g.pos.z = Math.max(-h, Math.min(h, g.pos.z));
+      const half = MAP_SIZE / 2 - 1;
+      g.pos.x = Math.max(-half, Math.min(half, g.pos.x));
+      g.pos.z = Math.max(-half, Math.min(half, g.pos.z));
 
       camera.position.set(g.pos.x, g.pos.y, g.pos.z);
       camera.rotation.order = "YXZ";
@@ -334,45 +277,25 @@ function Jogo() {
         moving,
       });
 
-      if (g.enemyMoving) {
-        g.animT += 0.14;
-        const s = Math.sin(g.animT) * 0.55;
-        g.lArm.rotation.x =  s; g.rArm.rotation.x = -s;
-        g.lLeg.rotation.x = -s; g.rLeg.rotation.x =  s;
-      } else {
-        g.lArm.rotation.x *= 0.8; g.rArm.rotation.x *= 0.8;
-        g.lLeg.rotation.x *= 0.8; g.rLeg.rotation.x *= 0.8;
-      }
-
       renderer.render(scene, camera);
     };
     loop();
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("keydown", onKD);
-      window.removeEventListener("keyup", onKU);
-      window.removeEventListener("mousemove", onMM);
-      window.removeEventListener("mousedown", onMD);
-      window.removeEventListener("resize", onResize);
-      renderer.domElement.removeEventListener("click", onCanvasClick);
       document.exitPointerLock();
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
     };
   }, [phase]);
 
-  if (phase === "win")  return <EndScreen title="VITÓRIA"  onExit={() => navigate("/perfil")} />;
-  if (phase === "lose") return <EndScreen title="ELIMINADO" onExit={() => navigate("/perfil")} />;
+  if (phase === "win")  return <EndScreen win={true}  onExit={() => navigate("/perfil")} />;
+  if (phase === "lose") return <EndScreen win={false} onExit={() => navigate("/perfil")} />;
 
   return (
       <div className="relative w-screen h-screen overflow-hidden bg-black">
         <div ref={mountRef} className="w-full h-full" />
 
-        {hitFlash && (
-            <div className="absolute inset-0 pointer-events-none z-40"
-                 style={{ boxShadow: "inset 0 0 80px 40px rgba(255,0,0,0.65)" }} />
-        )}
 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <svg width="24" height="24" viewBox="0 0 24 24">
@@ -421,6 +344,7 @@ function Jogo() {
 
 function buildArena(scene) {
   const half = MAP_SIZE / 2;
+  const collidables = [];
 
   const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE),
@@ -429,112 +353,97 @@ function buildArena(scene) {
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
-
   scene.add(new THREE.GridHelper(MAP_SIZE, 80, 0x444466, 0x333355));
 
   const wallMat = new THREE.MeshLambertMaterial({ color: 0x334455 });
   const WALL_H = 18;
   [
-    [MAP_SIZE + 2, WALL_H, 2,        0,          WALL_H / 2, -half],
-    [MAP_SIZE + 2, WALL_H, 2,        0,          WALL_H / 2,  half],
-    [2,        WALL_H, MAP_SIZE + 2, -half,      WALL_H / 2,  0   ],
-    [2,        WALL_H, MAP_SIZE + 2,  half,      WALL_H / 2,  0   ],
+    [MAP_SIZE + 2, WALL_H, 2,  0,    WALL_H / 2, -half],
+    [MAP_SIZE + 2, WALL_H, 2,  0,    WALL_H / 2,  half],
+    [2, WALL_H, MAP_SIZE + 2, -half, WALL_H / 2,  0   ],
+    [2, WALL_H, MAP_SIZE + 2,  half, WALL_H / 2,  0   ],
   ].forEach(([w, h, d, x, y, z]) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
     m.position.set(x, y, z);
-    m.castShadow = true;
     scene.add(m);
+    collidables.push({ minX: x-w/2, maxX: x+w/2, minY: y-h/2, maxY: y+h/2, minZ: z-d/2, maxZ: z+d/2 });
   });
 
-  const palette = [0x8b5e3c, 0x6b4423, 0xb07a40, 0x5a3e28, 0xa06030, 0x7a4d2a, 0x556677, 0x445566];
-  const rnd = (a, b) => a + Math.random() * (b - a);
+  const boxMat = new THREE.MeshLambertMaterial({ color: 0x7a4d2a });
+  const boxGeo = new THREE.BoxGeometry(BOX_W, BOX_H, BOX_D);
 
-  const collidables = [];
+  const positions = [];
+  for (let gx = -4; gx <= 4; gx++) {
+    for (let gz = -4; gz <= 4; gz++) {
+      if (Math.abs(gx) + Math.abs(gz) < 2) continue;
+      if (Math.abs(gx) >= 4 && Math.abs(gz) >= 4) continue;
+      const x = gx * 22 + (Math.random() * 8 - 4);
+      const z = gz * 22 + (Math.random() * 8 - 4);
+      if (Math.abs(x) > half - 10 || Math.abs(z) > half - 10) continue;
+      positions.push({ x, z });
+    }
+  }
 
-  const box = (x, y, z, w, h, d) => {
-    const mat = new THREE.MeshLambertMaterial({ color: palette[Math.floor(Math.random() * palette.length)] });
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  positions.forEach(({ x, z }) => {
+    const y = BOX_H / 2;
+    const m = new THREE.Mesh(boxGeo, boxMat);
     m.position.set(x, y, z);
     m.castShadow = true;
     m.receiveShadow = true;
     scene.add(m);
     collidables.push({
-      minX: x - w / 2, maxX: x + w / 2,
-      minY: y - h / 2, maxY: y + h / 2,
-      minZ: z - d / 2, maxZ: z + d / 2,
+      minX: x - BOX_W / 2, maxX: x + BOX_W / 2,
+      minY: 0,              maxY: BOX_H,
+      minZ: z - BOX_D / 2, maxZ: z + BOX_D / 2,
     });
-  };
-
-
-  for (let gx = -4; gx <= 4; gx++) {
-    for (let gz = -4; gz <= 4; gz++) {
-      if (Math.abs(gx) + Math.abs(gz) < 2) continue;
-      if (Math.abs(gx) >= 4 && Math.abs(gz) >= 4) continue;
-
-      const x = gx * 22 + rnd(-4, 4);
-      const z = gz * 22 + rnd(-4, 4);
-      if (Math.abs(x) > half - 8 || Math.abs(z) > half - 8) continue;
-
-      const r = Math.random();
-
-      if (r < 0.25) {
-        const w = rnd(5, 10);
-        const h = rnd(3.5, 7);
-        const d = rnd(5, 10);
-        box(x, h / 2, z, w, h, d);
-
-      } else if (r < 0.45) {
-        const s = rnd(4, 7);
-        const h = rnd(3, 6);
-        box(x,       h / 2, z,       s * 2, h, s);
-        box(x + s,   h / 2, z + s,   s,     h, s);
-
-      } else if (r < 0.62) {
-        const h = rnd(4, 9);
-        const len = rnd(8, 18);
-        const horiz = Math.random() > 0.5;
-        box(x, h / 2, z, horiz ? len : 3, h, horiz ? 3 : len);
-
-      } else if (r < 0.78) {
-        const s = rnd(4, 7);
-        const h1 = rnd(3, 5);
-        const h2 = rnd(2.5, 4);
-        box(x,         h1 / 2,           z,         s * 2, h1, s * 2);
-        box(x,         h1 + h2 / 2,      z,         s,     h2, s    );
-
-      } else if (r < 0.90) {
-        const s = rnd(3.5, 6);
-        const h = rnd(3.5, 6);
-        box(x,         h / 2, z,         s * 2, h, s);
-        box(x - s,     h / 2, z + s,     s,     h, s);
-        box(x + s,     h / 2, z + s,     s,     h, s);
-
-      } else {
-        const s = rnd(2.5, 4.5);
-        const h = rnd(2.5, 5);
-        box(x,         h / 2, z,         s, h, s);
-        box(x + s + 1, h / 2, z,         s, h * 0.7, s);
-        box(x,         h / 2, z + s + 1, s, h * 0.8, s);
-      }
-    }
-  }
-
-  for (let i = 0; i < 18; i++) {
-    const x = rnd(-half + 10, half - 10);
-    const z = rnd(-half + 10, half - 10);
-    if (Math.abs(x) < 15 && Math.abs(z) < 15) continue;
-    const w = rnd(3, 6);
-    const h = rnd(5, 12);
-    box(x, h / 2, z, w, h, w);
-  }
+  });
 
   return collidables;
 }
 
-function EndScreen({ title, onExit }) {
+function EndScreen({ win, onExit }) {
+  useEffect(() => {
+    const audio = new Audio(win ? "/Vitoria.mp3" : "/Derrota.mp3");
+    audio.volume = 0.7;
+    audio.play();
+    if (win) {
+      const end = Date.now() + 3000;
+      const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4"];
+      const frame = () => {
+        confetti({ particleCount: 6, angle: 60,  spread: 55,origin: { x: Math.random(), y: 0 }, colors });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      };
+      frame();
+    } else {
+      const end = Date.now() + 3000;
+      const frame = () => {
+        confetti({
+          particleCount: 8,
+          angle: 90,
+          spread: 120,
+          origin: { x: Math.random(), y: 0 },
+          colors: ["#555", "#777", "#999", "#333"],
+          gravity: 0.4,
+          scalar: 1.4,
+          drift: 0,
+          shapes: ["square"],
+        });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      };
+      frame();
+    }
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+      confetti.reset();
+    }
+  }, []);
+
   return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-8">
-        <div className="text-5xl font-bold text-white font-mono">{title}</div>
+      <div className={`min-h-screen flex flex-col items-center justify-center gap-8 ${win ? "bg-black" : "bg-gray-950"}`}>
+        <div className={`text-6xl font-bold font-mono ${win ? "text-yellow-400" : "text-gray-400"}`}>
+          {win ? "VITÓRIA" : "ELIMINADO"}
+        </div>
         <button onClick={onExit}
                 className="px-10 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-lg font-mono transition-all hover:scale-105">
           Voltar

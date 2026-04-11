@@ -14,7 +14,7 @@ function Perfil() {
     const [historico, setHistorico] = useState([]);
 
     const { notifySuccess, notifyError } = useNotification();
-    const { user } = useUser();
+    const { user, logout } = useUser();
     const socket = useSocket();
     const navigate = useNavigate();
 
@@ -60,7 +60,6 @@ function Perfil() {
     }, [userId]);
 
     const criarLobby = () => {
-        if (!nick) return notifyError("Nick não definido!");
         socket.emit("createLobby", { nick });
     };
 
@@ -77,7 +76,7 @@ function Perfil() {
 
     const startCountdown = (playersList, startCode) => {
         const finalCode = startCode || lobbyCode;
-        let counter = 3;
+        let counter = 5;
         setCountdown(counter);
 
         const interval = setInterval(() => {
@@ -101,8 +100,8 @@ function Perfil() {
 
             <div className="w-full max-w-4xl flex justify-between items-center">
                 <h1 className="text-3xl font-bold">Perfil</h1>
-                <div className="bg-gray-700 px-4 py-2 rounded-xl">
-                    👤 {nick}
+                <div className="bg-gray-700 px-4 py-2 rounded-xl" onClick={() => {logout();navigate('/')}}>
+                    {nick}
                 </div>
             </div>
 

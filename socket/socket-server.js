@@ -10,7 +10,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 const lobbies = {};
 
 io.on("connection", (socket) => {
-  console.log("User conectado:", socket.id);
 
   socket.on("createLobby", ({ nick }) => {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -39,17 +38,14 @@ io.on("connection", (socket) => {
     if (!lobby) return;
     if (lobby.host !== socket.id) return socket.emit("errorLobby", "Só o host pode iniciar");
     if (lobby.players.length < 2) return socket.emit("errorLobby", "Precisas de 2 jogadores");
-
-    // ── Send the code back so both clients know their lobbyCode ──
+    
     io.to(code).emit("gameStarting", { players: lobby.players, code });
   });
 
-  // ── MOVEMENT: relay to the other player in the room ──────────────────────
   socket.on("move", ({ code, x, y, z, yaw, pitch, moving }) => {
     socket.to(code).emit("enemyMove", { x, y, z, yaw, pitch, moving });
   });
 
-  // ── HIT ──────────────────────────────────────────────────────────────────
   socket.on("playerHit", ({ code, damage, shooter }) => {
     const lobby = lobbies[code];
     if (!lobby) return;
@@ -64,7 +60,6 @@ io.on("connection", (socket) => {
     socket.emit("enemyHpUpdate", { hp: lobby.hps[victim.id] });
   });
 
-  // ── DISCONNECT ────────────────────────────────────────────────────────────
   socket.on("disconnect", () => {
     console.log("User desconectado:", socket.id);
     for (const code in lobbies) {
