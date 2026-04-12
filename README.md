@@ -130,9 +130,6 @@ A cada frame, envia a posição atual ao servidor:
 socket.emit("move", { code, x, y, z, yaw, pitch, moving });
 ```
 
-**4. Animação do adversário**
-Quando `g.enemyMoving` é `true`, os braços e pernas do modelo 3D oscilam com `Math.sin`.
-
 ---
 
 ### Disparar
@@ -173,23 +170,6 @@ A cor do torso e braços varia consoante quem é o host:
 - Guest vê o adversário a **azul** (`0x4488ff`)
 
 ---
-
-### buildArena()
-
-A função `buildArena` coloca estruturas numa grelha 8×8 com variação aleatória de posição. Existem 6 tipos de estrutura:
-
-| Tipo | Probabilidade | Descrição |
-|---|---|---|
-| Bunker sólido | 25% | Bloco grande e alto |
-| Forma em L | 20% | Dois blocos em ângulo reto |
-| Muro / barreira | 17% | Parede longa e estreita |
-| Plataforma de dois níveis | 16% | Bloco largo com bloco mais pequeno em cima |
-| Forte em U | 12% | Três blocos formando uma curva |
-| Cluster de caixotes | 10% | Grupo de 3 caixotes dispersos |
-
-Adicionalmente, 18 pilares/torres são colocados aleatoriamente pelo mapa. O centro e as zonas de spawn ficam livres de obstáculos.
----
-
 ### Fases do Jogo
 
 ```js
