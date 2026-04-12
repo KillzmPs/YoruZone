@@ -100,7 +100,7 @@ function Perfil() {
 
             <div className="w-full max-w-4xl flex justify-between items-center">
                 <h1 className="text-3xl font-bold">Perfil</h1>
-                <div className="bg-gray-700 px-4 py-2 rounded-xl" onClick={() => {logout();navigate('/')}}>
+                <div className="bg-gray-700 px-4 py-2 rounded-xl cursor-pointer hover:scale-105 transition" onClick={() => {logout();navigate('/')}}>
                     {nick}
                 </div>
             </div>
