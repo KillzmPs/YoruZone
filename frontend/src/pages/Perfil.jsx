@@ -18,8 +18,15 @@ function Perfil() {
     const socket = useSocket();
     const navigate = useNavigate();
 
-    const nick = user.nick;
-    const userId = user.id;
+    const nick = user?.nick;
+    const userId = user?.id;
+
+    useEffect(() => {
+        if(!user) {
+            notifyError("Não deverias estar aqui")
+            navigate("/");
+        }
+    }, []);
 
     useEffect(() => {
         socket.on("lobbyCreated", ({ code }) => {
@@ -64,7 +71,7 @@ function Perfil() {
     };
 
     const entrarLobby = () => {
-        if (!code) return notifyError("Insere o código do lobby!");
+        if (!code) return notifyError("Insera o código do lobby!");
         socket.emit("joinLobby", { code, nick });
         setLobbyCode(code);
     };

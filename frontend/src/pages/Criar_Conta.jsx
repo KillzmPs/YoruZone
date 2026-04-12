@@ -56,7 +56,7 @@ function CriarConta() {
                     className={`w-full py-6 text-white rounded-xl text-2xl font-bold mt-5 shadow-lg transition-all duration-300 bg-blue-400 hover:brightness-110 hover:-translate-y-1"`}
                     onClick={handleSubmit}
                 >
-                    Crir Conta
+                    Criar Conta
                 </button>
 
                 <div

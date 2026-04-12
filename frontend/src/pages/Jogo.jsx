@@ -4,6 +4,7 @@ import { useUser } from "../context/UserContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 import * as THREE from "three";
 import confetti from "canvas-confetti";
+import { useNotification } from "../context/NotificationContext.jsx";
 
 const PLAYER_SPEED  = 0.15;
 const PLAYER_HEIGHT = 1.7;
@@ -20,6 +21,7 @@ function Jogo() {
   const location  = useLocation();
   const navigate  = useNavigate();
   const { user }  = useUser();
+  const { notifyError } = useNotification();
   const socket    = useSocket();
 
   const players   = location.state?.players || [user?.nick, "Adversário"];
@@ -33,6 +35,14 @@ function Jogo() {
   const [ammo, setAmmo]                 = useState(30);
   const [crosshairRed, setCrosshairRed] = useState(false);
   const [phase, setPhase]               = useState("game");
+
+
+  useEffect(() => {
+    if(!user) {
+      notifyError("Estás numa página onde não deverias estar");
+      navigate("/");
+    }
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
