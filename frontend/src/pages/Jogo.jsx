@@ -94,7 +94,7 @@ function Jogo() {
     const spawn = isHost ? { x: -80, z: -80 } : { x: 80, z: 80 };
     g.pos      = { x: spawn.x, y: PLAYER_HEIGHT, z: spawn.z };
     g.vel      = { y: 0 };
-    g.yaw      = 0;
+    g.yaw      = isHost ? -Math.PI/2 : 0;
     g.pitch    = 0;
     g.onGround = true;
     g.ammo     = 30;
