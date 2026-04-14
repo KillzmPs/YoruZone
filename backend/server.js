@@ -12,9 +12,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ─── NOTA: Socket.io NÃO funciona no Vercel (serverless).
-// Mantém o servidor Socket.io no Railway ou Render separadamente. ───────────
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -23,7 +20,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ── LOGIN ────────────────────────────────────────────────────────────────────
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -55,7 +51,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ── CRIAR CONTA ──────────────────────────────────────────────────────────────
+
 app.post("/api/criar-conta", async (req, res) => {
   const { nick, email } = req.body;
 
@@ -87,7 +83,7 @@ app.post("/api/criar-conta", async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Conta criada!",
-      text: `Olá ${nick}\n\nA tua conta foi criada com sucesso!\n\nPassword: ${randomPassword}\n\nObrigado por te inscrever na YoruZone!`,
+      text: `Olá ${nick}\n\nA tua conta foi criada com sucesso!\n\nPassword: ${randomPassword}\n\nObrigado por te inscreveres na YoruZone!`,
     });
 
     res.json({ message: "Conta criada! Verifica o email." });
@@ -98,7 +94,6 @@ app.post("/api/criar-conta", async (req, res) => {
   }
 });
 
-// ── HISTÓRICO ────────────────────────────────────────────────────────────────
 app.post("/api/historico", async (req, res) => {
   const { Id } = req.body;
 
@@ -129,5 +124,4 @@ app.post("/api/historico", async (req, res) => {
   }
 });
 
-// ── EXPORT para Vercel ───────────────────────────────────────────────────────
 module.exports = app;
