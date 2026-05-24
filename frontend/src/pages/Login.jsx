@@ -37,7 +37,7 @@ function Login() {
             <div className="bg-gray-800 p-10 rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-6">
 
                 <div className="flex items-center gap-4 mb-2">
-                    <img src={logo} className="w-12 h-12 rounded-xl" alt="logo" />
+                    <img src={logo} className="w-20 h-12 rounded-xl" alt="logo" />
                     <span className="text-2xl font-bold text-white">YoruZone</span>
                 </div>
 
