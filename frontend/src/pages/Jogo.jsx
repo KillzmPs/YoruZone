@@ -644,18 +644,20 @@ function Jogo() {
       setMatchResult(isWin ? "win" : "lose");
       setPhase("match_over");
 
-      fetch(`${API_URL}/api/guardar-jogo`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lobbyCode,
-          player1Nick:   myNick,
-          player2Nick:   enemyNick,
-          winnerNick,
-          player1Rounds: scores?.[myNick]    ?? g.myRoundsWon,
-          player2Rounds: scores?.[enemyNick] ?? g.enemyRoundsWon,
-        }),
-      }).catch(console.error);
+      if (isHost) {
+        fetch(`${API_URL}/api/guardar-jogo`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lobbyCode,
+            player1Nick:   myNick,
+            player2Nick:   enemyNick,
+            winnerNick,
+            player1Rounds: scores?.[myNick]    ?? g.myRoundsWon,
+            player2Rounds: scores?.[enemyNick] ?? g.enemyRoundsWon,
+          }),
+        }).catch(console.error);
+      }
     });
 
     socket.on("killCredits", ({ total }) => {
