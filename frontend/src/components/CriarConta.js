@@ -1,4 +1,4 @@
-const API_URL = "https://yoru-zone-p9kou0csu-killzmps-projects.vercel.app";
+const API_URL = "https://backend-yoru-zone.vercel.app";
 
 const InsertConta = async (nick, email) => {
     try {
