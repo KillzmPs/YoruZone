@@ -1,4 +1,4 @@
-const API_URL = "https://backend-yoru-zone.vercel.app";
+const API_URL = "https://yoru-zone-ivbq.vercel.app/";
 
 const Historico = async (Id) => {
     try {
