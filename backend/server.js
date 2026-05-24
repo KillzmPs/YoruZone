@@ -9,7 +9,7 @@ dotenv.config();
 const connectDB = require("./db");
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const transporter = nodemailer.createTransport({
