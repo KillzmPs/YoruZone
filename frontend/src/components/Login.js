@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3001";
+const API_URL = "https://yoru-zone-p9kou0csu-killzmps-projects.vercel.app";
 
 const LogIn = async (email, password) => {
     try {
