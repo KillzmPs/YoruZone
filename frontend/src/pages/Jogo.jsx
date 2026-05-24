@@ -18,8 +18,8 @@ const WEAPONS = {
 
 const PLAYER_SPEED  = 0.15;
 const PLAYER_HEIGHT = 1.7;
-const GRAVITY       = -0.015;
-const JUMP_FORCE    = 0.35;
+const GRAVITY       = -0.028;
+const JUMP_FORCE    = 0.30;
 const MAP_SIZE      = 200;
 const BOX_W = 8, BOX_H = 5, BOX_D = 8;
 const MAX_CREDITS   = 9_000;
