@@ -1,13 +1,15 @@
+const API_URL = "http://localhost:3001";
+
 const LogIn = async (email, password) => {
     try {
-        const res = await fetch('https://backend-yoru-zone.vercel.app/api/login', {
+        const res = await fetch(`${API_URL}/api/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, password}),
         });
 
         if (!res.ok) {
-            throw new Error("Erro ao fazer Login");
+            throw new Error("Erro ao iniciar sessão");
         }
 
         const data = await res.json();
@@ -15,6 +17,6 @@ const LogIn = async (email, password) => {
     } catch (error) {
         return {erro: error};
     }
-}
+};
 
 export default LogIn;

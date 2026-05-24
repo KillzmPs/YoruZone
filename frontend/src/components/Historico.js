@@ -1,20 +1,22 @@
+const API_URL = "http://localhost:3001";
+
 const Historico = async (Id) => {
     try {
-        const res = await fetch('https://backend-yoru-zone.vercel.app/api/historico', {
+        const res = await fetch(`${API_URL}/api/historico`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({Id}),
         });
 
         if (!res.ok) {
-            throw new Error("Erro no historico");
+            throw new Error("Erro no histórico");
         }
 
         const data = await res.json();
-        return data;
+        return Array.isArray(data) ? data : [];
     } catch (error) {
-        return {erro: error};
+        return [];
     }
-}
+};
 
 export default Historico;

@@ -1,7 +1,7 @@
 import { createContext, useContext, useRef } from "react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "https://socketyoru-production.up.railway.app";
+const SOCKET_URL = "http://localhost:4000";
 const SocketContext = createContext(null);
 
 let sharedSocket = null;

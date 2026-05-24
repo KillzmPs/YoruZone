@@ -40,7 +40,7 @@ function Perfil() {
             const uniquePlayers = [...new Set(playersList.map(p => p.nick))];
             setPlayers(uniquePlayers);
             if (uniquePlayers.length === 2) {
-                notifySuccess("Lobby cheio! Esperando o host iniciar...");
+                notifySuccess("Lobby cheio! À espera que o host inicie...");
             }
         });
 
@@ -71,7 +71,7 @@ function Perfil() {
     };
 
     const entrarLobby = () => {
-        if (!code) return notifyError("Insera o código do lobby!");
+        if (!code) return notifyError("Introduz o código do lobby!");
         socket.emit("joinLobby", { code, nick });
         setLobbyCode(code);
     };
@@ -178,17 +178,20 @@ function Perfil() {
                 {historico.map((jogo) => (
                     <div
                         key={jogo.Id}
-                        className={`flex justify-between px-4 py-2 rounded-lg ${
+                        className={`flex justify-between items-center px-4 py-2 rounded-lg ${
                             jogo.estado === "Vitória"
-                                ? "bg-green-600"
-                                : jogo.estado === "Derrota"
-                                    ? "bg-red-600"
-                                    : "bg-gray-700"
+                                ? "bg-green-700/80"
+                                : "bg-red-700/80"
                         }`}
                     >
-                        <span>{jogo.adversario}</span>
-                        <span>{jogo.estado}</span>
-                        <span>{jogo.Data.slice(0, 10)}</span>
+                        <span className="font-bold">{jogo.adversario}</span>
+                        <span className="font-mono text-sm">
+                            {jogo.Rondas_Ganhas ?? 0} — {jogo.rondas_adversario ?? 0}
+                        </span>
+                        <span className={`font-bold ${jogo.estado === "Vitória" ? "text-green-200" : "text-red-200"}`}>
+                            {jogo.estado}
+                        </span>
+                        <span className="text-gray-300 text-sm">{jogo.Data?.slice(0, 10)}</span>
                     </div>
                 ))}
             </div>
