@@ -58,12 +58,16 @@ app.post("/api/criar-conta", async (req, res) => {
       [nick, email, hashedPassword]
     );
 
-    await transporter.sendMail({
-      from:    process.env.EMAIL_USER,
-      to:      email,
-      subject: "Conta criada na YoruZone!",
-      text:    `Olá ${nick}\n\nA tua conta foi criada com sucesso!\n\nPalavra-passe: ${randomPassword}\n\nBom jogo!`,
-    });
+    try {
+      await transporter.sendMail({
+        from:    process.env.EMAIL_USER,
+        to:      email,
+        subject: "Conta criada na YoruZone!",
+        text:    `Olá ${nick}\n\nA tua conta foi criada com sucesso!\n\nPalavra-passe: ${randomPassword}\n\nBom jogo!`,
+      });
+    } catch (mailErr) {
+      console.error("Erro ao enviar email:", mailErr.message);
+    }
 
     res.json({ message: "Conta criada! Verifica o email." });
   } catch (err) {
