@@ -1,4 +1,4 @@
-const API_URL = "https://yoru-zone-ivbq.vercel.app";
+const API_URL = "https://aghast-unsaved-untidy.ngrok-free.dev";
 
 const Historico = async (Id) => {
     try {
