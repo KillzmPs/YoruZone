@@ -1,4 +1,4 @@
-const API_URL = "https://b1290f9ac6b9b7.lhr.life";
+const API_URL = "https://appreciation-figured-europe-differential.trycloudflare.com";
 
 const Historico = async (Id) => {
     try {
