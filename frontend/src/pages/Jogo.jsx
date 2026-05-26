@@ -24,7 +24,7 @@ const MAP_SIZE      = 200;
 const BOX_W = 8, BOX_H = 5, BOX_D = 8;
 const MAX_CREDITS   = 9_000;
 const BUY_TIME      = 15;
-const API_URL       = "https://aghast-unsaved-untidy.ngrok-free.dev";
+const API_URL       = "https://caa2fb0b00889c.lhr.life";
 
 function createAudioCtx() {
   return new (window.AudioContext || window.webkitAudioContext)();

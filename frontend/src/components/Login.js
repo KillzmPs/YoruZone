@@ -1,4 +1,4 @@
-const API_URL = "https://aghast-unsaved-untidy.ngrok-free.dev";
+const API_URL = "https://caa2fb0b00889c.lhr.life";
 
 const LogIn = async (email, password) => {
     try {
