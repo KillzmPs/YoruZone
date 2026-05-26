@@ -194,11 +194,11 @@ Group (enemy)
 **Arma 3ª pessoa** — anexada ao `armR` do modelo do adversário com `scale=0.80`.
 
 A animação de recarga (`getReloadOffsets`) é única por arma:
-- **Pistolas** — inclinação para baixo + ligeiro roll
+- **Pistolas** — inclinação para baixo
 - **Sheriff** — inclinação acentuada + abertura lateral (estilo revólver)
 - **Vandal** — inclina + rotação de charging handle no meio da animação
-- **Phantom** — inclina + charging handle mais suave
-- **Operator** — inclina muito + puxão de bolt lento
+- **Phantom** — inclina
+- **Operator** — inclina muito
 
 ---
 
