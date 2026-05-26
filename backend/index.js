@@ -1,3 +1,11 @@
+process.on('uncaughtException', (err) => {
+  console.error('Erro não capturado:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Promise rejeitada sem handler:', reason);
+});
+
 const app = require('./server');
 const dotenv = require('dotenv');
 dotenv.config();

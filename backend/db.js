@@ -10,6 +10,13 @@ const pool = mysql.createPool({
   database:         process.env.DB_NAME     || 'yoruzone',
   waitForConnections: true,
   connectionLimit:  10,
+  enableKeepAlive:  true,
+  keepAliveInitialDelay: 10000,
+});
+
+// sem este listener, um erro de ligação perdida crasha o processo
+pool.on('error', (err) => {
+  console.error('Erro no pool MySQL:', err.message);
 });
 
 async function connectDB() {
