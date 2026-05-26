@@ -1,4 +1,4 @@
-const API_URL = "https://caa2fb0b00889c.lhr.life";
+const API_URL = "https://b1290f9ac6b9b7.lhr.life";
 
 const Historico = async (Id) => {
     try {
