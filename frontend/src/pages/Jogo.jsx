@@ -647,7 +647,7 @@ function Jogo() {
       if (isHost) {
         fetch(`${API_URL}/api/guardar-jogo`, {
           method:  "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
           body: JSON.stringify({
             lobbyCode,
             player1Nick:   myNick,
